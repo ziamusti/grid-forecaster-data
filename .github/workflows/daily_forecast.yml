@@ -1,0 +1,58 @@
+name: Daily Forecast
+
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout data repo (this repo)
+        uses: actions/checkout@v4
+
+      - name: Checkout code repo
+        uses: actions/checkout@v4
+        with:
+          repository: ziamusti/Grid-Forecaster
+          path: code
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r requirements-stage0.txt
+        working-directory: code
+
+      - name: Download weather forecast
+        run: python scripts/download_weather_forecast_range.py --target-start "$(date -u +%F)" --days 3
+        working-directory: code
+
+      - name: Download SMARD data
+        run: python scripts/download_smard_range.py --start "$(date -u -d '10 days ago' +%F)" --end-exclusive "$(date -u +%F)"
+        working-directory: code
+
+      - name: Predict CO2
+        run: python scripts/predict_price_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
+        working-directory: code
+
+      - name: Predict renewable share
+        run: python scripts/predict_renewable_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
+        working-directory: code
+
+      - name: Copy predictions into data repo
+        run: cp "code/reports/forecast_price_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions.csv
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add predictions.csv
+          git commit -m "Automatische Vorhersage $(date -u +%F)" || echo "Keine Aenderungen"
+          git push
