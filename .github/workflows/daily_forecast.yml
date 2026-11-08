@@ -50,13 +50,19 @@ jobs:
         run: python scripts/predict_renewable_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
         working-directory: code
 
+      - name: Predict Bundesland forecast (CO2 + Gruenanteil, gepoolt)
+        run: python scripts/predict_bundesland_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
+        working-directory: code
+
       - name: Copy predictions into data repo
-        run: cp "code/reports/forecast_price_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions.csv
+        run: |
+          cp "code/reports/forecast_price_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions.csv
+          cp "code/reports/forecast_bundesland_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions_bundesland.csv
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add predictions.csv
+          git add predictions.csv predictions_bundesland.csv
           git commit -m "Automatische Vorhersage $(date -u +%F)" || echo "Keine Aenderungen"
           git push
