@@ -38,6 +38,10 @@ jobs:
         run: python scripts/download_smard_range.py --start "$(date -u -d '10 days ago' +%F)" --end-exclusive "$(date -u +%F)"
         working-directory: code
 
+      - name: Download price data
+        run: python scripts/download_energycharts_price_range.py --start "$(date -u -d '10 days ago' +%F)" --end-exclusive "$(date -u -d '+4 days' +%F)"
+        working-directory: code
+
       - name: Predict CO2
         run: python scripts/predict_price_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
         working-directory: code
