@@ -50,6 +50,10 @@ jobs:
         run: python scripts/predict_renewable_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
         working-directory: code
 
+      - name: Predict main model (XGBoost, CO2 selbst berechnet, Gruenanteil nach Quellen)
+        run: python scripts/predict_xgb_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
+        working-directory: code
+
       - name: Predict Bundesland forecast (CO2 + Gruenanteil, gepoolt)
         run: python scripts/predict_bundesland_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
         working-directory: code
