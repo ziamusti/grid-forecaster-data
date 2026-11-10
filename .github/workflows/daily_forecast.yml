@@ -30,8 +30,15 @@ jobs:
         run: pip install -r requirements-stage0.txt
         working-directory: code
 
+      - name: Set forecast start (tomorrow, UTC)
+        # The job runs at 23:00 UTC, so "today" in UTC is almost over; forecast
+        # the next three full days instead.
+        run: |
+          echo "TARGET_DATE=$(date -u -d '+1 day' +%F)" >> "$GITHUB_ENV"
+          echo "TARGET_TAG=$(date -u -d '+1 day' +%Y%m%d)" >> "$GITHUB_ENV"
+
       - name: Download weather forecast
-        run: python scripts/download_weather_forecast_range.py --target-start "$(date -u +%F)" --days 3
+        run: python scripts/download_weather_forecast_range.py --target-start "${TARGET_DATE}" --days 3
         working-directory: code
 
       - name: Download SMARD data
@@ -43,25 +50,25 @@ jobs:
         working-directory: code
 
       - name: Predict CO2
-        run: python scripts/predict_price_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
+        run: python scripts/predict_price_forecast.py --target-start "${TARGET_DATE}" --days 3 --weather-dir "data/raw/weather_forecast_${TARGET_TAG}_3d"
         working-directory: code
 
       - name: Predict renewable share
-        run: python scripts/predict_renewable_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
+        run: python scripts/predict_renewable_forecast.py --forecast-dir "reports/forecast_price_${TARGET_TAG}_3d_v1"
         working-directory: code
 
       - name: Predict main model (XGBoost, CO2 selbst berechnet, Gruenanteil nach Quellen)
-        run: python scripts/predict_xgb_forecast.py --forecast-dir "reports/forecast_price_$(date -u +%Y%m%d)_3d_v1"
+        run: python scripts/predict_xgb_forecast.py --forecast-dir "reports/forecast_price_${TARGET_TAG}_3d_v1"
         working-directory: code
 
       - name: Predict Bundesland forecast (CO2 + Gruenanteil, gepoolt)
-        run: python scripts/predict_bundesland_forecast.py --target-start "$(date -u +%F)" --days 3 --weather-dir "data/raw/weather_forecast_$(date -u +%Y%m%d)_3d"
+        run: python scripts/predict_bundesland_forecast.py --target-start "${TARGET_DATE}" --days 3 --weather-dir "data/raw/weather_forecast_${TARGET_TAG}_3d"
         working-directory: code
 
       - name: Copy predictions into data repo
         run: |
-          cp "code/reports/forecast_price_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions.csv
-          cp "code/reports/forecast_bundesland_$(date -u +%Y%m%d)_3d_v1/predictions.csv" predictions_bundesland.csv
+          cp "code/reports/forecast_price_${TARGET_TAG}_3d_v1/predictions.csv" predictions.csv
+          cp "code/reports/forecast_bundesland_${TARGET_TAG}_3d_v1/predictions.csv" predictions_bundesland.csv
 
       - name: Commit and push
         run: |
