@@ -30,12 +30,13 @@ jobs:
         run: pip install -r requirements-stage0.txt
         working-directory: code
 
-      - name: Set forecast start (tomorrow, UTC)
-        # The job runs at 23:00 UTC, so "today" in UTC is almost over; forecast
-        # the next three full days instead.
+      - name: Set forecast start (next day, UTC)
+        # Scheduled for 23:00 UTC, but GitHub often starts late, sometimes after
+        # midnight. "Now + 2 hours" gives the next day for any start between
+        # 22:00 and 21:59 UTC, so a delayed run does not skip a day.
         run: |
-          echo "TARGET_DATE=$(date -u -d '+1 day' +%F)" >> "$GITHUB_ENV"
-          echo "TARGET_TAG=$(date -u -d '+1 day' +%Y%m%d)" >> "$GITHUB_ENV"
+          echo "TARGET_DATE=$(date -u -d '+2 hours' +%F)" >> "$GITHUB_ENV"
+          echo "TARGET_TAG=$(date -u -d '+2 hours' +%Y%m%d)" >> "$GITHUB_ENV"
 
       - name: Download weather forecast
         run: python scripts/download_weather_forecast_range.py --target-start "${TARGET_DATE}" --days 3
