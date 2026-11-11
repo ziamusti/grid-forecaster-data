@@ -65,6 +65,14 @@ jobs:
         run: python scripts/predict_bundesland_forecast.py --target-start "${TARGET_DATE}" --days 3 --weather-dir "data/raw/weather_forecast_${TARGET_TAG}_3d"
         working-directory: code
 
+      - name: Download Energy-Charts generation per Bundesland
+        run: python scripts/download_energycharts_bundesland.py --start-year "$(date -u -d '-21 days' +%Y)"
+        working-directory: code
+
+      - name: Predict Bundesland main model (XGBoost, Quellen je Land)
+        run: python scripts/predict_bundesland_xgb_forecast.py --bundesland-dir "reports/forecast_bundesland_${TARGET_TAG}_3d_v1" --national-dir "reports/forecast_price_${TARGET_TAG}_3d_v1"
+        working-directory: code
+
       - name: Copy predictions into data repo
         run: |
           cp "code/reports/forecast_price_${TARGET_TAG}_3d_v1/predictions.csv" predictions.csv
