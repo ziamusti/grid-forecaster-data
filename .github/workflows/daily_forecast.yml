@@ -78,10 +78,15 @@ jobs:
           cp "code/reports/forecast_price_${TARGET_TAG}_3d_v1/predictions.csv" predictions.csv
           cp "code/reports/forecast_bundesland_${TARGET_TAG}_3d_v1/predictions.csv" predictions_bundesland.csv
 
+      - name: Append to prediction history (keeps earlier forecast days)
+        run: |
+          python code/scripts/append_live_history.py --new predictions.csv --history predictions_history.csv
+          python code/scripts/append_live_history.py --new predictions_bundesland.csv --history predictions_bundesland_history.csv
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add predictions.csv predictions_bundesland.csv
+          git add predictions.csv predictions_bundesland.csv predictions_history.csv predictions_bundesland_history.csv
           git commit -m "Automatische Vorhersage $(date -u +%F)" || echo "Keine Aenderungen"
           git push
